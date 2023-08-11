@@ -30,7 +30,6 @@ class Trie:
         contacts = []
         node = self.root
 
-
         for char in input:
             if char not in node.children:
                 return contacts
@@ -50,4 +49,23 @@ class Trie:
         
         dfs(input, node)
         return contacts
+
+class ContactList:
+    def __init__(self):
+        self.list_of_names = Trie()
+        self.information = {}
+    
+    def new_contact(self, name, number):
+        self.list_of_names.add(name)
+        self.information[name] = number
+    
+    def possible_contacts(self, input):
+        return self.list_of_names.contacts_list(input)
+
+    def contact_access(self, name):
+        full_information = name + ": " + str(self.information[name])
+        return full_information
+
+
+
 
