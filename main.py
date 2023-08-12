@@ -94,11 +94,17 @@ class ContactList:
             del self.information[name]
             self.list_of_names.remove(name)
     
+    def change_contact(self, name, input):
+        if name in self.information:
+            self.list_of_names.add(input)
+            self.information[input] = self.information[name]
+            self.remove_contact(name)
+    
 
     def contact_access(self, name):
         if name in self.information:
             full_information = (
-                str(name) + "\n" +
+                "Name: " + str(name) + "\n" +
                 "Company: " + str(self.information[name]["Company"]) + "\n" +
                 "Phone Number: " + str(self.information[name]["Phone Number"]) + "\n" +
                 "Email: " + str(self.information[name]["Email"])
@@ -173,9 +179,9 @@ class ContactList:
     def phone_number_format(self, number):
         number_format = ""
 
-        first_three = number[0:2]
-        middle_three = number[3:5]
-        last_four = number[6:9]
+        first_three = number[0:3]
+        middle_three = number[3:6]
+        last_four = number[6:]
 
         number_format += "("
 
@@ -191,4 +197,121 @@ class ContactList:
 
         for num in last_four:
             number_format += str(num)
+
+        return number_format
+
+
+
+
+
+
+
+
+contact_list = ContactList()
+
+while True:
+    print("-------------------------------------Contact List-------------------------------------")
+    
+    choice = input("Would you like to (create, access, update) a contact or exit? : ")
+    
+    if choice == "create":
+        print("----------------------------------------Create----------------------------------------")
+        print("If there is no information to add to the contact besides the name please enter 'N/A'.")
+        print("")
+        
+        name = input("Please enter the name of the contact: ")
+        while name in contact_list.information:
+            name = input("Contact already exits, enter a new contact name: ")
+
+        company = input("Please enter the company of the contact: ")
+        
+        number = input("Please enter a phone number: ")
+        while contact_list.valid_information_type("Phone Number", number) == False:
+            number = input("Please enter a valid phone number: ")
+        number = contact_list.phone_number_format(number)
+
+        email = input("Please enter an email address: ")
+        while contact_list.valid_information_type("Email", email) == False:
+            email = input("Please enter a valid email address: ")
+        
+        contact_list.new_contact(name, company, number, email)
+    
+    if choice == "access":
+        print("----------------------------------------Access----------------------------------------")
+        print("Will autocomplete from contacts if you cannot find whole name")
+        print("")
+        while True:
+            user_input = input("Enter name: ")
+            if user_input == "esc":
+                break
+            contact = contact_list.possible_contacts(user_input)
+            print("Possible contacts:", contact)
+
+            if len(contact) == 1:
+                print("-------------------------------------------------------------------------------------")
+                print(contact_list.contact_access(contact[0]))
+                break
+    
+    if choice == "update":
+        print("----------------------------------------Update----------------------------------------")
+        print("Will autocomplete from contacts if you cannot find whole name")
+        print("")
+        
+        user_input = ""
+
+        while True:
+            user_input = input("Enter name: ")
+            if user_input == "esc":
+                break
+            contact = contact_list.possible_contacts(user_input)
+            print("Possible contacts:", contact)
+            
+            if len(contact) == 1:
+                break
+        
+        print("")
+
+        while True:
+            sub_choice = input("Do you want to update (Name, Company, Number, Email) or exit: ").lower()
+            
+            if sub_choice == "name":
+                change = input("What do you want to change the contact name to? ")
+                while change in contact_list.information:
+                    change = input("Contact already exits, enter a new contact name: ")
+                contact_list.change_contact(contact[0], change)
+                print("")
+                print(contact_list.contact_access(change))
+                print("")
+            
+            if sub_choice == "company":
+                change = input("What do you want to change the company to? ")
+                contact_list.update_information(contact[0], "Company", change)
+                print("")
+                print(contact_list.contact_access(contact[0]))
+                print("")
+                    
+            if sub_choice == "number":
+                change = input("What do you want to change the number to? ")
+                while contact_list.valid_information_type("Phone Number", change) == False:
+                    change = input("Please enter a valid phone number: ")
+                contact_list.update_information(contact[0], "Number", contact_list.phone_number_format(change))
+                print("")
+                print(contact_list.contact_access(contact[0]))
+                print("")
+                    
+            if sub_choice == "email":
+                change = input("What do you want to change the email to? ")
+                while contact_list.valid_information_type("Email", email) == False:
+                    email = input("Please enter a valid email address: ")
+                contact_list.update_information(contact[0], "Email", change)
+                print("")
+                print(contact_list.contact_access(contact[0]))
+                print("")
+            
+            if sub_choice == "exit":
+                break
+        
+    if choice == "exit":
+        break
+
 
