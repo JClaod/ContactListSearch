@@ -28,7 +28,7 @@ class Trie:
     
     def remove(self, word):
         node = self.root
-        nodes_stack = [node]
+        nodes_stack = []
 
         for char in word:
             nodes_stack.append(node)
@@ -37,18 +37,17 @@ class Trie:
         node.is_end_of_word = False
 
         if bool(node.children):
-            node.is_end_of_word = False
             return
 
-        parent_node = nodes_stack.pop()
         for i in range(len(word) - 1, -1, -1):
-            new_char = word[i]
-            if len(parent_node.children) > 1 or parent_node.children[new_char].is_end_of_word:
-                # If there are other branches or the current node is the end of another word
-                del parent_node.children[new_char].children[char]
-                return
+            char = word[i]
             parent_node = nodes_stack.pop()
-            char = new_char
+            if parent_node.is_end_of_word or len(parent_node.children) > 1:
+                del parent_node.children[char]
+                return
+            
+        else:
+            del self.root.children[word[0]]
 
     def contacts_list(self, input):
         contacts = []
@@ -202,6 +201,17 @@ class ContactList:
             number_format += str(num)
 
         return number_format
+
+trie = Trie()
+trie.add("cameron")
+trie.add("camero")
+trie.add("cameronoper")
+trie.add("cait")
+trie.add("camella")
+trie.remove("cameronoper")
+trie.remove("camero")
+trie.remove("cameron")
+print(trie.contacts_list("c"))
 
 contact_list = ContactList()
 
