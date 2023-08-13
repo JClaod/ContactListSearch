@@ -28,29 +28,28 @@ class Trie:
     
     def remove(self, word):
         node = self.root
-        copy_node = node
-        counter = 0
+        nodes_stack = [node]
 
         for char in word:
-            if len(node.children) > 1:
-                counter += 1
+            nodes_stack.append(node)
             node = node.children[char]
+    
+        node.is_end_of_word = False
 
         if bool(node.children):
             node.is_end_of_word = False
             return
-        
-        new_counter = 0
-        for char in word:
-            if len(copy_node.children) > 1:
-                new_counter += 1
-            
-            if new_counter == counter:
-                del copy_node.children[char]
-                break
-            
-            copy_node = copy_node.children[char]
-            
+
+        parent_node = nodes_stack.pop()
+        for i in range(len(word) - 1, -1, -1):
+            new_char = word[i]
+            if len(parent_node.children) > 1 or parent_node.children[new_char].is_end_of_word:
+                # If there are other branches or the current node is the end of another word
+                del parent_node.children[new_char].children[char]
+                return
+            parent_node = nodes_stack.pop()
+            char = new_char
+
     def contacts_list(self, input):
         contacts = []
         node = self.root
@@ -203,7 +202,6 @@ class ContactList:
             number_format += str(num)
 
         return number_format
-
 
 contact_list = ContactList()
 
