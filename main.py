@@ -35,6 +35,10 @@ class Trie:
             if len(node.children) > 1:
                 counter += 1
             node = node.children[char]
+
+        if bool(node.children):
+            node.is_end_of_word = False
+            return
         
         new_counter = 0
         for char in word:
@@ -201,18 +205,23 @@ class ContactList:
         return number_format
 
 
-
-
-
-
-
-
 contact_list = ContactList()
+
+with open('List.html', 'r') as file:
+    for line in file:
+        elements = line.strip().split()
+
+        file_name = elements[0].lower()
+        file_company = elements[1]
+        file_phone_number = elements[2]
+        file_email = elements[3]
+
+        contact_list.new_contact(file_name, file_company, file_phone_number, file_email)
 
 while True:
     print("-------------------------------------Contact List-------------------------------------")
     
-    choice = input("Would you like to (create, access, update) a contact or exit? : ")
+    choice = input("Would you like to (create, access, update, remove) a contact or exit? : ")
     
     if choice == "create":
         print("----------------------------------------Create----------------------------------------")
@@ -247,8 +256,8 @@ while True:
             contact = contact_list.possible_contacts(user_input)
             print("Possible contacts:", contact)
 
-            if len(contact) == 1:
-                print("-------------------------------------------------------------------------------------")
+            if len(contact) == 1 or user_input in contact_list.information:
+                print("")
                 print(contact_list.contact_access(contact[0]))
                 break
     
@@ -310,6 +319,32 @@ while True:
             
             if sub_choice == "exit":
                 break
+    
+    if choice == "remove":
+        print("----------------------------------------Remove----------------------------------------")
+        print("Will autocomplete from contacts if you cannot find whole name")
+        print("")
+
+        user_input = ""
+
+        while True:
+            user_input = input("Enter name: ")
+            if user_input == "esc":
+                break
+            contact = contact_list.possible_contacts(user_input)
+            print("Possible contacts:", contact)
+            if len(contact) == 1 or user_input in contact_list.information:
+                if len(contact) == 1:
+                    user_input = contact[0]
+        
+            print("")
+            print("The contact you chose to delete is " + user_input)
+            deletion = input("Are you sure that you want to delete this contact (Y/N): ")
+            if deletion == "Y":
+                contact_list.remove_contact(user_input)
+            break
+        
+        print("")
         
     if choice == "exit":
         break
