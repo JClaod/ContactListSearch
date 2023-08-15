@@ -1,10 +1,10 @@
 # First mini project
-import keyboard
 
 class TrieNode:
     def __init__(self):
         self.children = {}
         self.is_end_of_word = False
+        self.counter = 1
 
 class Trie:
     def __init__(self):
@@ -16,6 +16,7 @@ class Trie:
             if char not in node.children:
                 return False
             node = node.children[char]
+
         return node.is_end_of_word
         
     def add(self, word):
@@ -23,26 +24,31 @@ class Trie:
         for char in word:
             if char not in node.children:
                 node.children[char] = TrieNode()
+            node.counter +=1
             node = node.children[char]
         node.is_end_of_word = True
+        node.counter += 1
     
     def remove(self, word):
         node = self.root
         nodes_stack = []
 
         for char in word:
+            node.counter -= 1
             nodes_stack.append(node)
             node = node.children[char]
-    
+
+        node.counter -= 1
         node.is_end_of_word = False
 
-        if bool(node.children):
+        if bool(node.children) or node.counter > 1:
             return
 
         for i in range(len(word) - 1, -1, -1):
             char = word[i]
             parent_node = nodes_stack.pop()
             if parent_node.is_end_of_word or len(parent_node.children) > 1:
+                parent_node.counter -= 1
                 del parent_node.children[char]
                 return
             
@@ -77,30 +83,34 @@ class Trie:
 class ContactList:
     def __init__(self):
         self.list_of_names = Trie()
-        self.information = {}
+        self.information = []
     
     def new_contact(self, name, company, number, email):
-        self.list_of_names.add(name)
+        self.list_of_names.add(name.lower())
 
-        self.information[name] = {
+        contact_info = {
             "Company": company,
             "Phone Number": number,
             "Email": email
         }
+        self.information.append([name, contact_info])
     
     def possible_contacts(self, input):
         return self.list_of_names.contacts_list(input)
     
     def remove_contact(self, name):
-        if name in self.information:
-            del self.information[name]
-            self.list_of_names.remove(name)
+        lower_name = name[0].lower()
+        if name in self.information: 
+            self.information.remove(name)
+            self.list_of_names.remove(lower_name)
     
     def change_contact(self, name, input):
         if name in self.information:
-            self.list_of_names.add(input)
-            self.information[input] = self.information[name]
+            self.list_of_names.add(input.lower())
+            updated_contact = [input, name[1]]
+            self.information.append(updated_contact)
             self.remove_contact(name)
+            return updated_contact
     
 
     def contact_access(self, name):
@@ -114,34 +124,59 @@ class ContactList:
         return full_information
 
     def update_information(self, name, type, input):
-        if name not in self.information:
-            return
-        
-        if type not in self.information[name]:
-            return
-        
-        else:
-            self.information[name][type] = input
+            contact_info = name[1]
+            contact_info[type] = input
     
     def valid_information_type(self, type, input):
-        if input == "N/A":
-            return True
+        if type == "Name":
+            if input == "":
+                return False
         
         if type == "Phone Number":
-            if len(input) != 10:
+            if input == "":
+                return True
+            
+            if len(str(input)) != 10:
                 return False
+            
+            for char in input:
+                if not char.isdigit():
+                    return False
         
         # only checks for name and first TLD
         if type == "Email":
+            if input == "":
+                return True
+            
             if "@" not in input or "." not in input:
                 return False
             
             at_sign_index = input.index("@")
             dot_sign_index = input.index(".")
 
-            if at_sign_index == 0 or dot_sign_index <= at_sign_index + 1:
+            if at_sign_index == 0 or dot_sign_index == at_sign_index - 1:
                 return False
-            
+
+            username = input[:at_sign_index]
+
+            dot_count = 0
+            for char in username:
+                if char == ".":
+                    dot_count += 1
+                if dot_count > 1:
+                    return False
+                else:
+                    dot_count = 0
+
+            second_half = input[at_sign_index:]
+
+            if second_half.count('.') > 1:
+                return False
+
+            input = input[at_sign_index: ]
+            at_sign_index = input.index("@")
+            dot_sign_index = input.index(".")
+
             local_part = input[at_sign_index + 1: dot_sign_index]
             domain_part = input[dot_sign_index + 1:]
 
@@ -169,16 +204,14 @@ class ContactList:
                 
             if any(char in invalid_chars for char in local_part):
                 return False
-        
-            if local_part.count('.') > 1:
-                return False
             
             if domain_part not in valid_domains:
                 return False
             
-            return True
+        return True
     
     def phone_number_format(self, number):
+        number = str(number)
         number_format = ""
 
         first_three = number[0:3]
@@ -201,160 +234,5 @@ class ContactList:
             number_format += str(num)
 
         return number_format
-
-trie = Trie()
-trie.add("cameron")
-trie.add("camero")
-trie.add("cameronoper")
-trie.add("cait")
-trie.add("camella")
-trie.remove("cameronoper")
-trie.remove("camero")
-trie.remove("cameron")
-print(trie.contacts_list("c"))
-
-contact_list = ContactList()
-
-with open('List.html', 'r') as file:
-    for line in file:
-        elements = line.strip().split()
-
-        file_name = elements[0].lower()
-        file_company = elements[1]
-        file_phone_number = elements[2]
-        file_email = elements[3]
-
-        contact_list.new_contact(file_name, file_company, file_phone_number, file_email)
-
-while True:
-    print("-------------------------------------Contact List-------------------------------------")
-    
-    choice = input("Would you like to (create, access, update, remove) a contact or exit? : ")
-    
-    if choice == "create":
-        print("----------------------------------------Create----------------------------------------")
-        print("If there is no information to add to the contact besides the name please enter 'N/A'.")
-        print("")
-        
-        name = input("Please enter the name of the contact: ")
-        while name in contact_list.information:
-            name = input("Contact already exits, enter a new contact name: ")
-
-        company = input("Please enter the company of the contact: ")
-        
-        number = input("Please enter a phone number: ")
-        while contact_list.valid_information_type("Phone Number", number) == False:
-            number = input("Please enter a valid phone number: ")
-        number = contact_list.phone_number_format(number)
-
-        email = input("Please enter an email address: ")
-        while contact_list.valid_information_type("Email", email) == False:
-            email = input("Please enter a valid email address: ")
-        
-        contact_list.new_contact(name, company, number, email)
-    
-    if choice == "access":
-        print("----------------------------------------Access----------------------------------------")
-        print("Will autocomplete from contacts if you cannot find whole name")
-        print("")
-        while True:
-            user_input = input("Enter name: ")
-            if user_input == "esc":
-                break
-            contact = contact_list.possible_contacts(user_input)
-            print("Possible contacts:", contact)
-
-            if len(contact) == 1 or user_input in contact_list.information:
-                print("")
-                print(contact_list.contact_access(contact[0]))
-                break
-    
-    if choice == "update":
-        print("----------------------------------------Update----------------------------------------")
-        print("Will autocomplete from contacts if you cannot find whole name")
-        print("")
-        
-        user_input = ""
-
-        while True:
-            user_input = input("Enter name: ")
-            if user_input == "esc":
-                break
-            contact = contact_list.possible_contacts(user_input)
-            print("Possible contacts:", contact)
-            
-            if len(contact) == 1:
-                break
-        
-        print("")
-
-        while True:
-            sub_choice = input("Do you want to update (Name, Company, Number, Email) or exit: ").lower()
-            
-            if sub_choice == "name":
-                change = input("What do you want to change the contact name to? ")
-                while change in contact_list.information:
-                    change = input("Contact already exits, enter a new contact name: ")
-                contact_list.change_contact(contact[0], change)
-                print("")
-                print(contact_list.contact_access(change))
-                print("")
-            
-            if sub_choice == "company":
-                change = input("What do you want to change the company to? ")
-                contact_list.update_information(contact[0], "Company", change)
-                print("")
-                print(contact_list.contact_access(contact[0]))
-                print("")
-                    
-            if sub_choice == "number":
-                change = input("What do you want to change the number to? ")
-                while contact_list.valid_information_type("Phone Number", change) == False:
-                    change = input("Please enter a valid phone number: ")
-                contact_list.update_information(contact[0], "Number", contact_list.phone_number_format(change))
-                print("")
-                print(contact_list.contact_access(contact[0]))
-                print("")
-                    
-            if sub_choice == "email":
-                change = input("What do you want to change the email to? ")
-                while contact_list.valid_information_type("Email", email) == False:
-                    email = input("Please enter a valid email address: ")
-                contact_list.update_information(contact[0], "Email", change)
-                print("")
-                print(contact_list.contact_access(contact[0]))
-                print("")
-            
-            if sub_choice == "exit":
-                break
-    
-    if choice == "remove":
-        print("----------------------------------------Remove----------------------------------------")
-        print("Will autocomplete from contacts if you cannot find whole name")
-        print("")
-
-        user_input = ""
-
-        while True:
-            user_input = input("Enter name: ")
-            if user_input == "esc":
-                break
-            contact = contact_list.possible_contacts(user_input)
-            print("Possible contacts:", contact)
-            if len(contact) == 1 or user_input in contact_list.information:
-                if len(contact) == 1:
-                    user_input = contact[0]
-        
-            print("")
-            print("The contact you chose to delete is " + user_input)
-            deletion = input("Are you sure that you want to delete this contact (Y/N): ")
-            if deletion == "Y":
-                contact_list.remove_contact(user_input)
-            break
-        
-        print("")
-        
-    if choice == "exit":
-        break
 
 
